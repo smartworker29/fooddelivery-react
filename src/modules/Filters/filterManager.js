@@ -10,7 +10,7 @@ const initialstate = {
     filterNameText: '',
     filterCategoryText: '',
     filterRatingText: '',
-    filterPriceText: ''    
+    filterPriceText: ''
 };
 class Filters extends Component {
 
@@ -19,19 +19,11 @@ class Filters extends Component {
         this.state = initialstate;
     }
 
-    componentWillMount() {
-        this.setState({
-            ...initialstate,
-            filteredItems: [...this.props.items],
-            allItems: [...this.props.items]
-        });
-    }
-
     componentWillReceiveProps(nextProps) {
         if (nextProps.items && nextProps.items.length > 0) {
             this.setState({
-                allItems: [...nextProps.items],
-                filteredItems: [...nextProps.items]
+                allItems: JSON.parse(JSON.stringify(nextProps.items)),
+                filteredItems: JSON.parse(JSON.stringify(nextProps.filteredItems))
             });
         }
     }
@@ -42,7 +34,7 @@ class Filters extends Component {
         let filterRatingText = this.state.filterRatingText;
         let filterNameText = this.state.filterNameText;
         let filterPriceText = this.state.filterPriceText;
-        let array = this.state.allItems || [];
+        let array = [...this.state.allItems] || [];
         if (ops === 'category') {
             filterCategoryText = filterText;
         } else if (ops === 'rating') {
@@ -52,6 +44,7 @@ class Filters extends Component {
         } else {
             filterNameText = filterText;
         }
+        // category filter
         array = array.filter((obj) => {
             let ok = true;
 
@@ -59,24 +52,28 @@ class Filters extends Component {
                 ok = (obj.categoryName === filterCategoryText);
             }
 
-            if (ok && filterRatingText !== '') {
-                obj = (obj.items.filter((item) => {
-                    return item.rating == filterRatingText;
-                }));
-            }
-
-            if (ok && filterPriceText !== '') {
-                obj = (obj.items.filter((item) => {
-                    return (item.price > filterRatingText.split(",")[0] || (item.price < filterRatingText.split(",")[1]));
-                }));
-            }
-
-            if (ok && filterNameText !== '') {
-                obj = (obj.items.filter((item) => {
-                    return (item.name.toLowerCase().search(filterNameText.toLowerCase()) > -1);
-                }));
-            }
             return ok;
+        });
+        // other filters
+        array.forEach((obj, idx) => {
+            let filteredItems = obj.items.filter((item) => {
+                let ok = true;
+
+                if (ok && filterRatingText !== '') {
+                    ok = item.rating == filterRatingText;
+                }
+
+                if (ok && filterPriceText !== '') {
+                    ok = (item.price > filterRatingText.split(",")[0] || (item.price < filterRatingText.split(",")[1]));
+                }
+
+                if (ok && filterNameText !== '') {
+                    ok = (item.name.toLowerCase().search(filterNameText.toLowerCase()) > -1);
+                }
+                return ok;
+            });
+            obj.items = filteredItems;
+            array[idx] = obj;
         });
         // set State
         this.setState({ filterNameText, filterCategoryText, filterRatingText, filterPriceText, filteredItems: array });
